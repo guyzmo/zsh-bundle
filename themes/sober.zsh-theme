@@ -1,59 +1,29 @@
-
-#CC=%{$fg_bold[$ZSH_HOST_COLOR]%}
-#CCH=%{$fg[$ZSH_HOST_COLOR]%}
-#RC=%{$reset_color%}
+### Colours
 
 CC="%{%B%F{${ZSH_HOST_COLOR}}%}"
 CCH="%{%F{${ZSH_HOST_COLOR}}%}"
 RC="%{$reset_color%}"
 
-# Format for git_prompt_info()
-ZSH_THEME_GIT_PROMPT_PREFIX="${CC})─(${RC}"
-ZSH_THEME_GIT_PROMPT_SUFFIX=""
-ZSH_THEME_GIT_PROMPT_STATUS_BEFORE=""
-ZSH_THEME_GIT_PROMPT_STATUS_AFTER=""
-ZSH_THEME_GIT_PROMPT_BRANCH_BEFORE=""
-ZSH_THEME_GIT_PROMPT_BRANCH_AFTER=""
-ZSH_THEME_GIT_PROMPT_SHA_BEFORE=""
-ZSH_THEME_GIT_PROMPT_SHA_AFTER=""
+### Parts definition
 
-# Format for parse_git_dirty()
-ZSH_THEME_GIT_PROMPT_DIRTY="%{$fg_bold[red]%}✗${RC}"
-ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}✓${RC}"
-ZSH_THEME_RUBY_PROMPT_BEFORE=")─(rvm:"
-ZSH_THEME_RUBY_PROMPT_AFTER=""
-
-virtualenv_prompt_info () {
-    [ -n ${VIRTUAL_ENV} ] || return
-    echo "${CC})─(${RC}${VIRTUAL_ENV:t}"
-}
-
-#ZSH_THEME_VENV_PROMPT_BEFORE="YYYYY"
-#ZSH_THEME_VENV_PROMPT_AFTER="XXXXX"
-ZSH_THEME_NVM_PROMPT_BEFORE=")─(nvm:"
-ZSH_THEME_NVM_PROMPT_AFTER="$RC"
-
-# Format for git_prompt_status()
-ZSH_THEME_GIT_PROMPT_UNMERGED="%{$fg_bold[red]%}⚑${RC}"
-ZSH_THEME_GIT_PROMPT_DELETED="%{$fg[yellow]%}!${RC}"
-ZSH_THEME_GIT_PROMPT_RENAMED="%{$fg[yellow]%}±${RC}"
-ZSH_THEME_GIT_PROMPT_MODIFIED="%{$fg[yellow]%}≠${RC}"
-ZSH_THEME_GIT_PROMPT_ADDED="%{$fg_bold[yellow]%}✚${RC}"
-ZSH_THEME_GIT_PROMPT_UNTRACKED="%{$fg[yellow]%}…${RC}"
-ZSH_THEME_GIT_PROMPT_AHEAD="%{$fg[green]%}↑${RC}"
-
-battery_prompt () {
+battery_part () {
     [ -n ${LAPTOP_MODE} ] || return
-    echo $(battery_pct_prompt)
+    echo -n $(battery_pct_prompt)
 }
 
-if [ ${USER} = "root" ]; then
-    ZSH_THEME_PROMPT='${RC}$(battery_prompt)${CC}(${RC}$fg[red]%n${RC}${CCH}@%m${RC}${CC})─(${RC}%D{%H:%M}${CC})${RC} ${ret_prompt} '
-else
-    ZSH_THEME_PROMPT='${RC}$(battery_prompt)${CC}(${RC}%n${CCH}@%m${RC}${CC})─(${RC}%D{%H:%M}${CC})${RC} ${ret_prompt} '
-fi
+venv_part () {
+    [ -n ${DEV_MODE} ] || return
+    [ -n ${VIRTUAL_ENV} ] || return
+    echo "${VIRTUAL_ENV:t}"
+}
 
-ZSH_THEME_RPROMPT='${CC}(${RC}%3~$(git_prompt_info)$(git_prompt_status)$(rvm_prompt_info)$(virtualenv_prompt_info)$(nvm_prompt_info)${CC})─${RC}'
+path_part () {
+  echo -n "$(shrink_path -l -t)"
+}
+
+time_part () {
+  echo -n "%D{%H:%M}"
+}
 
 left_part_sq="${CC}[${RC}"
 link_part_sq="${CC}]─${RC}"
@@ -70,11 +40,54 @@ else
   user_part="${RC}%n${CCH}@%m${RC}${CC}"
 fi
 
+
+### modules formats
+
+# Format for git_prompt_info()
+ZSH_THEME_GIT_PROMPT_PREFIX="${link_part_rd}${left_part_rd}"
+ZSH_THEME_GIT_PROMPT_SUFFIX=""
+ZSH_THEME_GIT_PROMPT_STATUS_BEFORE=""
+ZSH_THEME_GIT_PROMPT_STATUS_AFTER=""
+ZSH_THEME_GIT_PROMPT_BRANCH_BEFORE=""
+ZSH_THEME_GIT_PROMPT_BRANCH_AFTER=""
+ZSH_THEME_GIT_PROMPT_SHA_BEFORE=""
+ZSH_THEME_GIT_PROMPT_SHA_AFTER=""
+
+# Format for parse_git_dirty()
+ZSH_THEME_GIT_PROMPT_DIRTY=""
+ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}✓${RC}"
+
+# rvm/nvm/venv
+ZSH_THEME_RUBY_PROMPT_BEFORE="${link-part-rd}${left_part_rd}rvm:"
+ZSH_THEME_RUBY_PROMPT_AFTER=""
+ZSH_THEME_VENV_PROMPT_BEFORE="${link-part-rd}${left_part_rd}venv:"
+ZSH_THEME_VENV_PROMPT_AFTER="${link-part-rd}${right_part_rd}"
+ZSH_THEME_NVM_PROMPT_BEFORE="${link-part-rd}${left_part_rd}nvm:"
+ZSH_THEME_NVM_PROMPT_AFTER="${link-part-rd}${right_part_rd}"
+
+# Format for git_prompt_status()
+ZSH_THEME_GIT_PROMPT_UNMERGED="%{$fg_bold[red]%}⚑${RC}"
+ZSH_THEME_GIT_PROMPT_DELETED="%{$fg[yellow]%}!${RC}"
+ZSH_THEME_GIT_PROMPT_RENAMED="%{$fg[yellow]%}±${RC}"
+ZSH_THEME_GIT_PROMPT_MODIFIED="%{$fg[yellow]%}≠${RC}"
+ZSH_THEME_GIT_PROMPT_ADDED="%{$fg_bold[yellow]%}✚${RC}"
+ZSH_THEME_GIT_PROMPT_UNTRACKED="%{$fg[blue]%}…${RC}"
+ZSH_THEME_GIT_PROMPT_AHEAD="%{$fg[green]%}↑${RC}"
+
+### prompt construction jobs
+
 async_lprompt_job() {
   local -a parts=()
   parts+=$left_part_sq
-  parts+=$(battery_prompt)
+  parts+=$(battery_part)
   parts+=$link_part_sq
+  parts+=$left_part_rd
+  parts+=$user_part
+  parts+=$link_part_rd
+  parts+=$left_part_rd
+  parts+=$(time_part)
+  parts+=$right_part_rd
+
   echo -n "${(j::)parts}"
 }
 
@@ -83,12 +96,18 @@ sync_lprompt_job() {
   parts+=$left_part_sq
   parts+="…"
   parts+=$link_part_sq
+  parts+=$left_part_rd
+  parts+=$user_part
+  parts+=$link_part_rd
+  parts+=$(time_part)
+  parts+=$right_part_rd
+
   echo -n "${(j::)parts}"
 }
 
 sync_rprompt_job() {
   local -a parts=()
-  parts+=${link_part_rd}
+  parts+=$right_part_rd
   echo -n "${(j::)parts}"
 }
 
@@ -96,9 +115,12 @@ async_rprompt_job() {
   local -a parts=()
   parts+=$(git_prompt_info)
   parts+=$(git_prompt_status)
-  parts+=${link_part_rd}
+  parts+=$(venv_part)
+  parts+=$right_part_rd
   echo -n "${(j::)parts}"
 }
+
+### prompt assembly tasks
 
 build_lprompt() {
   local -a parts=()
@@ -111,10 +133,6 @@ build_lprompt() {
     fi
   fi
 
-  parts+=$left_part_rd
-  parts+=$user_part
-  parts+=$right_part_rd
-
   PROMPT="${(j::)parts} ${prompt_part} "
 }
 
@@ -122,7 +140,7 @@ build_rprompt() {
   local -a parts=()
 
   parts+=$left_part_rd
-  parts+="${${PWD/#$HOME/~}//(#b)([^\/])[^\/][^\/]#\//$match[1]/}"
+  parts+=$(path_part)
 
   if [[ "$1" != $'\0' ]]; then
     if [[ -n "$1" ]]; then
